@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONST305 — Course at a Glance</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --ink-faint: #888;
+    --rule: #ccc;
+    --paper: #fafafa;
+    --canvas-bg: #ffffff;
+    --accent: #B1292D;
+    --serif: Georgia, 'Times New Roman', serif;
+    --mono: 'Courier New', Courier, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--canvas-bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  body { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  .title { font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .subtitle { font-size: 14px; font-style: italic; color: var(--ink-soft); text-align: center; margin-bottom: 28px; }
+
+  .phase-bands { display: grid; grid-template-columns: 1fr 2.5fr 4fr; gap: 6px; margin-bottom: 8px; }
+  .band { background: var(--ink); color: white; padding: 6px 12px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+  .band.setup { background: #666; }
+
+  .weeks { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-bottom: 4px; }
+  .week {
+    position: relative;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    padding: 8px 6px 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+  }
+  .week:hover { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .week.exam { border: 2px solid var(--accent); }
+  .week.big-assignment { border-width: 1.5px; }
+  .week.current { background: var(--accent); color: white; border-color: var(--ink); border-width: 1.5px; }
+  .week.current:hover { background: #c93338; }
+  .week.complete { opacity: 0.55; }
+  .week.complete:hover { opacity: 1; }
+  .week.selected { background: var(--ink); color: white; border-color: var(--ink); border-width: 1.5px; }
+  .week.selected.current { background: var(--accent); }
+  .week.selected:hover { background: #333; }
+  .week.selected.current:hover { background: #c93338; }
+
+  .week-num { font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .week-rule { border-top: 1px solid var(--rule); margin-bottom: 6px; }
+  .week.current .week-rule, .week.selected .week-rule { border-top-color: rgba(255,255,255,0.5); }
+  .week-topic { font-size: 11px; font-weight: 700; text-align: center; margin-bottom: 4px; line-height: 1.2; }
+  .week-detail { font-size: 10px; text-align: center; color: var(--ink-soft); line-height: 1.3; flex: 1; }
+  .week.current .week-detail, .week.selected .week-detail { color: rgba(255,255,255,0.85); }
+  .week-flag { font-size: 10px; font-weight: 700; color: var(--accent); text-align: center; margin-top: 4px; letter-spacing: 1px; }
+  .week.exam .week-flag::before { content: "★ "; }
+  .week.big-assignment .week-flag::before { content: "★ "; }
+  .week.current .week-flag, .week.selected .week-flag { color: white; }
+
+  .axis-row { display: grid; grid-template-columns: repeat(14, 1fr); gap: 6px; margin-bottom: 24px; }
+  .tick { height: 18px; border-top: 1.2px solid var(--ink); position: relative; }
+  .tick::before { content: ""; position: absolute; top: 0; left: 50%; width: 0; height: 8px; border-left: 0.6px solid var(--ink); }
+  .tick.you-are-here::before { border-left-color: var(--accent); border-left-width: 1.5px; }
+  .tick.you-are-here::after {
+    content: "▲ YOU ARE HERE";
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    font-family: var(--serif);
+  }
+
+  /* ===== Inline detail panel ===== */
+  .detail-panel {
+    background: white;
+    border: 2px solid var(--ink);
+    margin: 56px 0 24px;
+    padding: 28px 32px 30px;
+    position: relative;
+  }
+  .detail-panel.hidden { display: none; }
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .detail-header-left { flex: 1; }
+  .detail-week-num { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); letter-spacing: 2px; margin-bottom: 4px; }
+  .detail-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .detail-due { font-size: 12px; color: var(--ink-soft); font-style: italic; }
+  .detail-go-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: var(--serif);
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .detail-go-btn:hover { background: #c93338; }
+
+  .detail-body { display: grid; grid-template-columns: 1.2fr 1.5fr; gap: 32px; }
+  .detail-section h4 { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--ink-faint); margin-bottom: 8px; }
+  .detail-section p { font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+  .detail-section ul { list-style: none; padding: 0; }
+  .detail-section li { font-size: 14px; padding: 5px 0 5px 18px; position: relative; line-height: 1.5; }
+  .detail-section li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
+  .detail-assignment { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule); }
+  .detail-assignment h4 { color: var(--accent); }
+
+  .panel { background: var(--paper); border: 1px solid var(--ink); padding: 22px 28px 26px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; margin-top: 24px; }
+  .panel-col h3 { font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+  .panel-col.current h3 { color: var(--accent); border-bottom-color: var(--accent); }
+  .panel-col p { font-size: 13px; line-height: 1.55; margin-top: 10px; color: var(--ink); }
+  .panel-col p.italic { font-style: italic; color: var(--ink-soft); margin-top: 16px; }
+
+  @media (max-width: 900px) {
+    body { padding: 16px; }
+    .weeks { grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(2, auto); }
+    .axis-row { display: none; }
+    .phase-bands { display: none; }
+    .panel { grid-template-columns: 1fr; gap: 24px; }
+    .week { min-height: 100px; }
+    .week-num { font-size: 18px; }
+    .detail-body { grid-template-columns: 1fr; gap: 20px; }
+    .detail-header { flex-direction: column; gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<h1 class="title">CONST305 — Construction Estimating</h1>
+<p class="subtitle" id="subtitle">The whole semester on one page.</p>
+
+<div class="phase-bands">
+  <div class="band setup">SETUP</div>
+  <div class="band">RANCH HOUSE PROJECT — WEEKS 3 THROUGH 7</div>
+  <div class="band">SMALL COTTAGE PROJECT — WEEKS 8 THROUGH 14</div>
+</div>
+
+<div class="weeks" id="weeksContainer"></div>
+<div class="axis-row" id="axisRow"></div>
+
+<div class="detail-panel hidden" id="detailPanel">
+  <div class="detail-header">
+    <div class="detail-header-left">
+      <div class="detail-week-num" id="detailWeekNum"></div>
+      <div class="detail-title" id="detailTitle"></div>
+      <div class="detail-due" id="detailDue"></div>
+    </div>
+    <a class="detail-go-btn" id="detailGoBtn" href="#" target="_top">GO TO MODULE →</a>
+  </div>
+  <div class="detail-body">
+    <div class="detail-section">
+      <h4>FOCUS</h4>
+      <p id="detailFocus"></p>
+    </div>
+    <div class="detail-section">
+      <h4>KEY CONCEPTS</h4>
+      <ul id="detailConcepts"></ul>
+    </div>
+  </div>
+  <div class="detail-assignment" id="detailAssignmentSection">
+    <h4>ASSIGNMENT</h4>
+    <p id="detailAssignment"></p>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="panel-col">
+    <h3>WHAT'S BEHIND YOU</h3>
+    <p id="behindText"></p>
+    <p class="italic" id="behindItalic"></p>
+  </div>
+  <div class="panel-col current">
+    <h3>WHAT'S THIS WEEK</h3>
+    <p id="thisWeekText"></p>
+  </div>
+  <div class="panel-col">
+    <h3>WHAT'S AHEAD</h3>
+    <p id="aheadText"></p>
+    <p class="italic" id="aheadItalic"></p>
+  </div>
+</div>
+
+<script>
+/* =============================================================
+   CONFIGURATION — edit this section each semester.
+   ============================================================= */
+
+const SEMESTER = {
+  finalPhrase: "Patience is the difference between work I can grade and work I'd hire."
+};
+
+const WEEKS = [
+  { num: 1, topic: "Excel Basics", detail: "spreadsheet setup\ntools intro", dueDate: "2026-05-11", moduleUrl: "#week-1",
+    focus: "Get oriented in the spreadsheet. Excel is the foundation of every estimate you will produce in this course and in your career — invest now to build fluency.",
+    concepts: ["Workbook structure: tabs, ranges, named cells", "Formulas, references, and basic functions", "Formatting for readability (estimates get reviewed by people)"],
+    assignment: "Set up your course workbook and complete the Excel orientation exercise." },
+  { num: 2, topic: "Wage Burden", detail: "labor cost\nfully burdened rates", dueDate: "2026-05-18", moduleUrl: "#week-2",
+    focus: "Base wage is what the worker earns. Burdened rate is what the project pays. They are not the same number — and treating them as the same will break your estimate.",
+    concepts: ["Components of burden: payroll taxes, workers' comp, insurance, PTO, retirement", "Burden ratio varies by region (Mexico ~30-40%, US ~50-70%, Germany ~70-80%)", "How to build a fully burdened wage rate from a base wage"],
+    assignment: "Calculate fully burdened wage rates for three trades using the worksheet provided." },
+  { num: 3, topic: "NCE Cost Data", detail: "manual + Bluebeam intro", dueDate: "2026-05-25", moduleUrl: "#week-3",
+    focus: "Two reference tools you will use the rest of the course: the NCE Cost Data Manual for unit prices, and Bluebeam for digital takeoff from drawings.",
+    concepts: ["How the NCE manual is organized (CSI divisions, regional adjustments)", "Reading unit costs and assembly costs", "Bluebeam basics: measure tool, layers, count tool"],
+    assignment: "Complete the NCE manual exercise and the Bluebeam takeoff tutorial." },
+  { num: 4, topic: "Concrete Takeoff", detail: "volume, formwork, rebar", dueDate: "2026-06-01", moduleUrl: "#week-4",
+    focus: "Concrete is always three numbers, never one: volume of material, square feet of formwork contact area, and pounds of reinforcement. Each is priced separately.",
+    concepts: ["Volume in cubic yards (cy) — buys the mix", "Formwork as SFCA (square feet of contact area) — shapes the pour", "Reinforcement weight by bar size (#3 = 0.376 lb/ft, #5 = 1.043 lb/ft, etc.)", "Waste factor: 5–10% for concrete"],
+    assignment: "Complete the foundation concrete takeoff for the Ranch House project." },
+  { num: 5, topic: "Roofing + Shell", detail: "slope factor,\ncost composition", dueDate: "2026-06-08", moduleUrl: "#week-5",
+    focus: "The footprint of a roof is not the surface area of a roof. Apply the slope factor before pricing materials and labor — and use the 25–35% shell sanity check on your totals.",
+    concepts: ["Slope factor: 4:12 = 1.054, 6:12 = 1.118, 8:12 = 1.202, 12:12 = 1.414", "Roofing measured in squares (1 sq = 100 sf)", "Shell sanity check: framing + roof + siding + windows + doors should land at 25–35% of total cost"],
+    assignment: "Roof and shell takeoff for the Ranch House project." },
+  { num: 6, topic: "Interior Finishes", detail: "drywall, flooring, paint", dueDate: "2026-06-15", moduleUrl: "#week-6",
+    focus: "Interior finishes are roughly 22% of total residential cost — the largest single category. Get this right and your estimate is realistic.",
+    concepts: ["Drywall by sf with 10–15% waste factor", "Flooring by sf, by room (different products in different spaces)", "Paint by sf with multiple coats; trim and ceilings priced separately", "Subtract openings but track them separately"],
+    assignment: "Complete the interior finishes takeoff for the Ranch House project." },
+  { num: 7, topic: "MIDTERM", detail: "Ranch House complete", dueDate: "2026-06-22", moduleUrl: "#week-7",
+    focus: "The Ranch House estimate comes together as one complete bid. The midterm exam tests your fluency with everything from Weeks 1–6.",
+    concepts: ["Synthesizing all takeoff components into a complete estimate", "Cross-checking totals against industry sanity checks", "Submitting a clean, client-facing summary"],
+    assignment: "Submit complete Ranch House estimate. Take the midterm exam.",
+    flag: "EXAM", type: "exam" },
+  { num: 8, topic: "Cottage Plans", detail: "read drawings, scope it", dueDate: "2026-06-29", moduleUrl: "#week-8",
+    focus: "The Small Cottage project starts here. This time you are the estimator on record. Read the drawings carefully and define your scope before you start counting anything.",
+    concepts: ["Reading architectural and structural drawings", "Scope definition: what's in, what's excluded", "Building a project-specific estimate template"],
+    assignment: "Submit a written scope statement and exclusions list for the Small Cottage." },
+  { num: 9, topic: "Sitework + Concrete", detail: "clearing → slab,\n6-step sequence", dueDate: "2026-07-06", moduleUrl: "#week-9",
+    focus: "Sitework follows the same 6-step sequence whether the project is a single house or a stadium: clearing → excavation → utilities → backfill → drainage → final grade.",
+    concepts: ["The 6-step sitework sequence", "Cottage foundation concrete: applying Week 4 skills to your project", "Sitework pricing by acre, cubic yard, or lump sum depending on scope"],
+    assignment: "Complete sitework and foundation concrete takeoff for the Small Cottage." },
+  { num: 10, topic: "Concrete Detailed", detail: "apply to cottage specifically", dueDate: "2026-07-13", moduleUrl: "#week-10",
+    focus: "Take the concrete fundamentals from Week 4 and apply them with full detail to your cottage. Volume, formwork, reinforcement — and the unit conversions that catch most errors.",
+    concepts: ["Unit conversion sanity checks (cf vs cy is the most common mistake)", "Formwork detailing for footings, stem walls, and slab edges", "Rebar schedule from drawings"],
+    assignment: "Detailed concrete schedule for the Small Cottage with all three numbers." },
+  { num: 11, topic: "Framing Takeoff", detail: "floors, walls,\nroof, hardware", dueDate: "2026-07-20", moduleUrl: "#week-11",
+    focus: "The largest single assignment in the course. Floor framing → wall framing → roof framing → hardware, in that order. Plan for 4–6 hours across multiple sessions, not one midnight sprint.",
+    concepts: ["Floor framing: joists, rim boards, blocking, subfloor", "Wall framing: studs at 16\" o.c. plus corners, T-intersections, kings, jacks, cripples", "Roof framing: rafters/trusses, ridge, ceiling joists, sheathing × slope factor", "Hardware: nails, hangers, ties, anchor bolts (priced last because you can't count connectors until you know what's connected)"],
+    assignment: "Complete framing takeoff for the Small Cottage. 116 points.",
+    flag: "116 PTS", type: "big" },
+  { num: 12, topic: "Exterior Finishes", detail: "siding, roofing, openings", dueDate: "2026-07-27", moduleUrl: "#week-12",
+    focus: "Subtract openings from siding, but track them separately at unit prices. Forget to subtract: you over-buy. Forget to track: you under-bid the project.",
+    concepts: ["Gross wall area minus openings = net siding area", "Windows and doors priced as units, not as wall area (10× the rate of the wall they replace)", "Roofing finalization with slope factor applied"],
+    assignment: "Exterior finishes takeoff for the Small Cottage." },
+  { num: 13, topic: "Subs + MEP", detail: "plumbing, electrical, HVAC", dueDate: "2026-08-03", moduleUrl: "#week-13",
+    focus: "Subcontractors price work four ways: per fixture, per square foot, lump sum, or time and materials. Use the method that matches the scope.",
+    concepts: ["Per-fixture pricing (electrical outlets, plumbing fixtures)", "Per-sf pricing (ductwork, drywall, roofing)", "Lump-sum pricing (defined complete scopes)", "T&M pricing (unknowns and change orders only)"],
+    assignment: "Solicit and document MEP sub pricing for the Small Cottage." },
+  { num: 14, topic: "FINAL", detail: "OH+P, summary,\nsubmit bid", dueDate: "2026-08-10", moduleUrl: "#week-14",
+    focus: "Direct cost + Overhead + Profit = Bid Price. Each layer covers a different thing. Confuse them and you lose money — or lose the bid.",
+    concepts: ["Overhead (~12% typical residential): pays for the office, your salary, insurance, vehicles", "Profit (~8% typical residential): reward for risk, builds reserves, funds growth", "Summary estimate page: scope, cost categories, total, exclusions", "Final exam covers all 14 weeks"],
+    assignment: "Submit complete Small Cottage bid. Take the final exam.",
+    flag: "EXAM", type: "exam" }
+];
+
+/* ===== Auto-detect current week from due dates ===== */
+function getCurrentWeekIndex() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < WEEKS.length; i++) {
+    const due = new Date(WEEKS[i].dueDate);
+    due.setHours(23, 59, 59, 999);
+    if (today <= due) return i;
+  }
+  return WEEKS.length - 1;
+}
+
+const currentIndex = getCurrentWeekIndex();
+const currentWeek = WEEKS[currentIndex];
+let selectedIndex = null;
+
+/* ===== Render week strip ===== */
+function renderWeeks() {
+  const container = document.getElementById('weeksContainer');
+  const axisRow = document.getElementById('axisRow');
+  container.innerHTML = '';
+  axisRow.innerHTML = '';
+
+  WEEKS.forEach((wk, i) => {
+    const div = document.createElement('div');
+    div.className = 'week';
+    if (wk.type === 'exam') div.classList.add('exam');
+    if (wk.type === 'big') div.classList.add('big-assignment');
+    if (i === currentIndex) div.classList.add('current');
+    if (i < currentIndex) div.classList.add('complete');
+    if (i === selectedIndex) div.classList.add('selected');
+
+    const detailHtml = wk.detail.split('\n').map(s => `<div>${s}</div>`).join('');
+    const flagHtml = wk.flag ? `<div class="week-flag">${wk.flag}</div>` : '';
+
+    div.innerHTML = `
+      <div class="week-num">${wk.num}</div>
+      <div class="week-rule"></div>
+      <div class="week-topic">${wk.topic}</div>
+      <div class="week-detail">${detailHtml}</div>
+      ${flagHtml}
+    `;
+    div.addEventListener('click', () => selectWeek(i));
+    container.appendChild(div);
+
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    if (i === currentIndex) tick.classList.add('you-are-here');
+    axisRow.appendChild(tick);
+  });
+}
+
+/* ===== Select week — show detail in inline panel ===== */
+function selectWeek(weekIndex) {
+  if (selectedIndex === weekIndex) {
+    selectedIndex = null;
+    document.getElementById('detailPanel').classList.add('hidden');
+    renderWeeks();
+    return;
+  }
+
+  selectedIndex = weekIndex;
+  const wk = WEEKS[weekIndex];
+  const dueDate = new Date(wk.dueDate);
+  const dueLabel = dueDate.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  document.getElementById('detailWeekNum').textContent = `WEEK ${wk.num}`;
+  document.getElementById('detailTitle').textContent = wk.topic;
+  document.getElementById('detailDue').textContent = `Due ${dueLabel}`;
+  document.getElementById('detailFocus').textContent = wk.focus;
+
+  const conceptsList = document.getElementById('detailConcepts');
+  conceptsList.innerHTML = wk.concepts.map(c => `<li>${c}</li>`).join('');
+
+  const assignmentSection = document.getElementById('detailAssignmentSection');
+  if (wk.assignment) {
+    assignmentSection.style.display = 'block';
+    document.getElementById('detailAssignment').textContent = wk.assignment;
+  } else {
+    assignmentSection.style.display = 'none';
+  }
+
+  document.getElementById('detailGoBtn').href = wk.moduleUrl;
+  document.getElementById('detailPanel').classList.remove('hidden');
+
+  renderWeeks();
+
+  // Scroll to keep the detail panel in view smoothly
+  document.getElementById('detailPanel').scrollIntoView({
+    behavior: 'smooth', block: 'nearest'
+  });
+}
+
+/* ===== Render bottom panel ===== */
+function renderPanel() {
+  const subtitle = document.getElementById('subtitle');
+  subtitle.textContent = `The whole semester on one page. You are in Week ${currentWeek.num}.`;
+
+  const behindText = document.getElementById('behindText');
+  const behindItalic = document.getElementById('behindItalic');
+  if (currentIndex === 0) {
+    behindText.textContent = "This is the first week of the course. Nothing behind you yet — but Excel and Bluebeam fluency are the foundation of everything that follows.";
+    behindItalic.textContent = "Take time this week to get the tools set up properly.";
+  } else {
+    const completedTopics = WEEKS.slice(0, currentIndex).map(w => w.topic).join(', ');
+    behindText.innerHTML = `Weeks 1–${currentIndex} covered: <strong>${completedTopics}</strong>. Each of those skills gets reused later in the course.`;
+    behindItalic.textContent = "If any of these still feel shaky, come back to them now — they get reused all semester.";
+  }
+
+  const thisWeekText = document.getElementById('thisWeekText');
+  thisWeekText.innerHTML = `<strong>${currentWeek.topic}.</strong> ${currentWeek.focus}`;
+
+  const aheadText = document.getElementById('aheadText');
+  const aheadItalic = document.getElementById('aheadItalic');
+  if (currentIndex >= WEEKS.length - 1) {
+    aheadText.textContent = "This is the final week of the course. Submit your complete bid and take the final exam.";
+    aheadItalic.textContent = "Finish well.";
+  } else {
+    const upcomingMilestone = WEEKS.slice(currentIndex + 1).find(w => w.type === 'exam' || w.type === 'big');
+    const milestoneText = upcomingMilestone
+      ? `${upcomingMilestone.topic} (Week ${upcomingMilestone.num}) is the next major milestone. ${upcomingMilestone.type === 'big' ? 'Plan for 4–6 hours across multiple sessions, not one long sprint.' : 'Review previous weeks before the exam.'}`
+      : `${WEEKS.length - currentIndex - 1} weeks remaining in the course.`;
+    aheadText.textContent = milestoneText;
+    aheadItalic.textContent = SEMESTER.finalPhrase;
+  }
+}
+
+renderWeeks();
+renderPanel();
+
+// Optional: pre-select the current week so detail panel shows on load.
+// Uncomment to enable.
+// selectWeek(currentIndex);
+</script>
+
+</body>
+</html>
