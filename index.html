@@ -21,13 +21,13 @@
     background: var(--canvas-bg);
     color: var(--ink);
     font-family: var(--serif);
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.6;
   }
   body { padding: 24px; max-width: 1400px; margin: 0 auto; }
 
-  .title { font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 6px; }
-  .subtitle { font-size: 14px; font-style: italic; color: var(--ink-soft); text-align: center; margin-bottom: 28px; }
+  .title { font-size: 40px; line-height: 1.15; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .subtitle { font-size: 18px; font-style: italic; color: var(--ink); text-align: center; margin-bottom: 32px; }
 
   .phase-bands { display: grid; grid-template-columns: 1fr 2.5fr 4fr; gap: 6px; margin-bottom: 8px; }
   .band { background: var(--ink); color: white; padding: 6px 12px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
@@ -146,6 +146,8 @@
     .panel { grid-template-columns: 1fr; gap: 24px; }
     .week { min-height: 100px; }
     .week-num { font-size: 18px; }
+    .title { font-size: 28px; }
+    .subtitle { font-size: 16px; }
     .detail-body { grid-template-columns: 1fr; gap: 20px; }
     .detail-header { flex-direction: column; gap: 14px; }
   }
